@@ -219,6 +219,13 @@ body {
 }
 .sidebar-header h1 { font-size: 1.2rem; color: var(--accent); }
 .sidebar-header .stats { font-size: .8rem; color: var(--muted); margin-top: 4px; }
+.sidebar-header .links { margin-top: 8px; display: flex; gap: 10px; flex-wrap: wrap; }
+.sidebar-header .links a {
+  font-size: .7rem; color: var(--accent); text-decoration: none;
+  padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border);
+  transition: background .15s;
+}
+.sidebar-header .links a:hover { background: rgba(88,166,255,.1); }
 .search-box {
   padding: 12px 20px; border-bottom: 1px solid var(--border);
 }
@@ -334,6 +341,10 @@ body {
   <div class="sidebar-header">
     <h1>DataWarehouse</h1>
     <div class="stats" id="sidebar-stats">Loading...</div>
+    <div class="links">
+      <a href="https://github.com/symmetryseeker/DataWarehouse-Explorer" target="_blank">GitHub</a>
+      <a href="https://8a2f919343bf8ef0-36-110-14-5.serveousercontent.com" target="_blank">Live Demo</a>
+    </div>
   </div>
   <div class="search-box">
     <input type="text" id="search-input" placeholder="Search repos, tags, data types..." oninput="doSearch()">
