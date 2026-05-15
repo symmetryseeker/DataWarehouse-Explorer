@@ -1,0 +1,16 @@
+{
+  "search_keywords": [
+    "api",
+    "crawler",
+    "scraper",
+    "dataset",
+    "data-pipeline"
+  ],
+  "min_stars": 5,
+  "max_repos_per_keyword": 20,
+  "blacklist_repos": [],
+  "preferred_mirrors": [
+    "kgithub"
+  ],
+  "warehouse_root": "E:\\DataWarehouse"
+}
