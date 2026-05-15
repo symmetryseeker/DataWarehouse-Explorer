@@ -1,4 +1,4 @@
-# DeepSeek DataV4 — 个人离线数据仓库构建器
+#  个人离线数据仓库构建器
 
 <div align="center">
 
