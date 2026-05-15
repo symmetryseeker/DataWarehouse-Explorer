@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataWarehouse Explorer</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-header">
+    <h1>DataWarehouse</h1>
+    <div class="stats" id="sidebar-stats">Loading...</div>
+    <div class="links">
+      <a href="https://github.com/symmetryseeker/DataWarehouse-Explorer" target="_blank">GitHub</a>
+      <a href="https://8a2f919343bf8ef0-36-110-14-5.serveousercontent.com" target="_blank">Live Demo</a>
+    </div>
+  </div>
+  <div class="search-box">
+    <input type="text" id="search-input" placeholder="Search repos, tags, data types..." oninput="doSearch()">
+  </div>
+  <div class="repo-list" id="repo-list">
+    <div style="padding:20px;color:var(--muted);">Loading...</div>
+  </div>
+</div>
+
+<div class="main" id="main-panel">
+  <div class="main-header" id="main-header" style="display:none;">
+    <h2 id="repo-title"></h2>
+    <span class="badge" id="repo-score"></span>
+    <span class="badge license-badge" id="repo-license" style="display:none;"></span>
+  </div>
+  <div class="file-grid" id="file-grid"></div>
+  <div class="empty-main" id="empty-main">Select a repository from the sidebar</div>
+</div>
+
+<div class="overlay" id="overlay" onclick="closePreview()"></div>
+<div class="preview-panel" id="preview-panel">
+  <div class="preview-header">
+    <h3 id="preview-title"></h3>
+    <div class="preview-actions">
+      <button class="btn-sm" id="btn-stats" onclick="showStats()" style="display:none;">Stats</button>
+      <button class="btn-sm" id="btn-chart" onclick="showChart()" style="display:none;">Chart</button>
+      <button class="btn-sm" id="btn-export-csv" onclick="exportFile('csv')" style="display:none;">Export CSV</button>
+      <button class="btn-sm" id="btn-export-json" onclick="exportFile('json')" style="display:none;">Export JSON</button>
+      <button class="preview-close" onclick="closePreview()">&times;</button>
+    </div>
+  </div>
+  <div class="preview-body" id="preview-body"></div>
+</div>
+
+<script src="/static/js/app.js"></script>
+<script src="/static/js/charts.js"></script>
+</body>
+</html>

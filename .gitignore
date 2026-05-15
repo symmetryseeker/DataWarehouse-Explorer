@@ -1,5 +1,6 @@
 # Python
 __pycache__/
+**/__pycache__/
 *.py[cod]
 *.egg-info/
 dist/
@@ -13,11 +14,14 @@ venv/
 *.swp
 *.swo
 
-# Data warehouse (user's local data)
-My Passport/
-DataWarehouse/
+# Data warehouse (user's local data on external drive)
+/My Passport/
 *.db
 *.sqlite
+
+# Explicitly include our package (case-insensitive Windows would match /DataWarehouse/)
+!/datawarehouse/
+!/datawarehouse/**
 
 # Logs
 logs/
