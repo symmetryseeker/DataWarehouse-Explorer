@@ -1,219 +1,261 @@
-#  个人离线数据仓库构建器
+# DeepSeek DataV4 — 把互联网变成你的随身数据仓库
 
 <div align="center">
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Flask](https://img.shields.io/badge/Web-Flask%20%2B%20Vanilla%20JS-58a6ff)](https://flask.palletsprojects.com/)
+[![Flask](https://img.shields.io/badge/Web-Flask%20%2B%20Chart.js-58a6ff)](https://flask.palletsprojects.com/)
+[![Tests](https://img.shields.io/badge/tests-18%20passed-brightgreen)](tests/)
+[![SQLite](https://img.shields.io/badge/metadata-SQLite%20%2B%20CAS-orange)]()
 
-**自动化离线数据仓库构建器 + 交互式网页浏览器**
+**自动搜索 → 智能校验 → 内容寻址存储 → 交互式网页浏览**
 
-[在线演示](https://8a2f919343bf8ef0-36-110-14-5.serveousercontent.com) · [快速开始](#快速开始) · [功能特性](#功能特性) · [架构设计](#架构设计)
+[在线演示](https://8a2f919343bf8ef0-36-110-14-5.serveousercontent.com) · [技术架构](#技术路线) · [快速开始](#快速开始) · [为什么值得 Star](#-为什么值得-star)
 
 </div>
 
 ---
 
-## 这是什么？
+## 一句话说清楚
 
-一个完全自动化的 Python 流水线，能够：
+> **每次新项目都要去 Kaggle、GitHub、各大学 FTP 翻数据集？**
+>
+> 这个工具替你自动化了这一切。插上移动硬盘，运行一行命令，得到一个**可搜索、可预览、可导出的私有数据仓库**。自带 189 个真实 CSV 数据集让你立刻就能用。
 
-1. **智能探测** — 从 GitHub 镜像站搜索包含 API、爬虫、数据集的开源仓库
-2. **质量评估** — 自动检测项目是否"活着"：语法校验、数据结构完整性、打分
-3. **本地存储** — 将合格数据保存到移动硬盘，建立科学分类的文件索引
-4. **交互查询** — 提供命令行搜索终端 + Flask 网页浏览器，随时浏览预览数据
+---
 
-> 把你的移动硬盘变成一个**可查询、可浏览的离线数据仓库**。插上硬盘、运行脚本、获取数据集。
+## 为什么值得 ⭐ Star？
+
+| 理由 | 一句话 |
+|------|--------|
+| **不是玩具** | 18 个自动化测试，12 个模块化包，完整的 Type Hints + Google Style Docstrings |
+| **5 路抗断网下载** | GitHub → kgithub 镜像 → gitclone 镜像 → ZIP 主分支 → ZIP master 分支，一种挂了换下一种 |
+| **内容寻址去重** | SHA-256 寻址存储，两个仓库包含同一个 CSV 只存一份，为 10 万+ 文件设计 |
+| **数据护照** | 每个数据集自动生成 UUID + 领域标签 + 许可证 + 引用格式 + 兼容工具链 |
+| **PII 合规扫描** | 自动检测 email/phone/address/name/SSN/IP 列，Web UI 黄色警告标记 |
+| **零配置公网分享** | 无需 nginx、无需域名、无需云账单，`ssh -R` 一行命令生成公网链接 |
+| **自愈安装** | 缺少依赖自动 `pip install`，Python 3.10+ 和 Git 即可运行 |
+| **插盘即用** | 自动探测 `My Passport` 移动硬盘路径（Windows/macOS/Linux） |
+
+---
+
+## 技术路线
+
+```
+                           DeepSeek DataV4 流水线
+═══════════════════════════════════════════════════════════════════
+
+  GitHub 镜像          GitHub API          5 个种子仓库
+  (kgithub/gitclone)   (REST)              (fivethirtyeight...)
+       │                    │                    │
+       └────────────────────┼────────────────────┘
+                            │
+                   ┌────────▼────────┐
+                   │  Stage 1         │
+                   │  Ingester        │
+                   │  异步 aiohttp    │
+                   │  Semaphore 并发  │
+                   │  User-Agent 轮换 │
+                   └────────┬────────┘
+                            │ 候选仓库
+                   ┌────────▼────────┐
+                   │  Stage 2         │
+                   │  Validator       │
+                   │  ▸ CSV 列一致性  │
+                   │  ▸ XML 结构校验  │
+                   │  ▸ SQLite 表探测 │
+                   │  ▸ PII 合规扫描  │
+                   │  ▸ 许可证识别    │
+                   │  ▸ 0–50 质量评分 │
+                   └────────┬────────┘
+                            │ 合格仓库 (score ≥ 5)
+                   ┌────────▼────────┐
+                   │  Stage 3 + 4     │
+                   │  StorageEngine   │
+                   │  ▸ SHA-256 CAS   │
+                   │  ▸ raw/processed │
+                   │  ▸ SQLite 元数据 │
+                   │  ▸ 版本历史追踪  │
+                   └────────┬────────┘
+                            │
+              ┌─────────────┼─────────────┐
+              │                           │
+     ┌────────▼────────┐       ┌─────────▼────────┐
+     │  CLI 终端        │       │  Web 浏览器       │
+     │  DS4> /search    │       │  ▸ CSV 表格预览   │
+     │  /stats /best    │       │  ▸ 排序/过滤/统计  │
+     │  /recent /quit   │       │  ▸ Chart.js 图表  │
+     └─────────────────┘       │  ▸ 导出 CSV/JSON  │
+                               │  ▸ Basic Auth     │
+                               │  ▸ serveo 公网隧道 │
+                               └──────────────────┘
+```
+
+### 模块架构（v2.0）
+
+```
+datawarehouse/
+├── models.py          # 4 个 dataclass: RepoMeta, DataPassport, FileRecord, ValidationReport
+├── config.py          # 配置管理 + My Passport 自动探测
+├── ingestor.py        # 异步搜索 + 5 路下载策略
+├── validator.py       # 深度校验 + PII 扫描 + 许可证检测
+├── storage.py         # SHA-256 内容寻址存储 + raw/processed 分离
+├── query.py           # 内存倒排索引 + 自然语言搜索
+├── metadb.py          # SQLite 元数据库 (3 tables, 6 indexes)
+├── pipeline.py        # 流水线编排器
+├── license_report.py  # LICENSES.md 自动生成
+├── web/               # Flask 模块
+│   ├── routes.py      # 11 个 REST API 端点
+│   ├── auth.py        # HTTP Basic Auth (可选)
+│   └── static/        # Vanilla JS + Chart.js 暗色主题 UI
+└── cli.py             # DS4> 交互终端
+```
 
 ---
 
 ## 快速开始
 
 ```bash
-# 1. 克隆仓库
 git clone git@github.com:symmetryseeker/DataWarehouse-Explorer.git
 cd DataWarehouse-Explorer
 
-# 2. 运行数据流水线（自动搜索、下载、评分、存储）
+# 运行流水线（自动搜索 → 下载 → 校验 → 存储）
 python DeepSeek_DataV4.py
 
-# 3. 启动网页浏览器
+# 启动网页浏览器
 python DataWarehouse_Web.py
-
-# 4. 浏览器打开 http://127.0.0.1:5000
+# → http://127.0.0.1:5000
 ```
 
-首次运行自动安装依赖（`aiohttp`, `beautifulsoup4`, `flask` 等）。需要 Python 3.10+ 和 Git。
+> 首次运行自动安装依赖。需要 Python 3.10+ 和 Git。
 
 ---
 
-## 功能特性
+## 预置数据：开箱即用
 
-### 命令行流水线（4 阶段自动化）
+流水线内置 5 个高质量开源数据仓库作为种子，首跑即可获取：
 
-| 阶段 | 核心类 | 功能 |
-|------|--------|------|
-| **1. 探测获取** | `Ingester` | 异步搜索 kgithub/gitclone 镜像站 + GitHub API 兜底，随机轮换 User-Agent 反爬 |
-| **2. 质量评估** | `Validator` | 递归发现 `.json` `.csv` `.xml` `.db` 文件，`ast.parse` 检验 Python 语法，`json.load` 校验 JSON，输出 0–50 质量分 |
-| **3. 本地存储** | `StorageEngine` | 代码与分类数据写入 `My Passport/DataWarehouse/`，幂等设计——重复运行自动跳过已有内容 |
-| **4. 交互查询** | `QueryInterface` | 内存倒排索引，支持自然语言检索 `/search 电商价格 csv` |
-
-### 网页浏览器
-
-```
-┌──────────────────┬──────────────────────────────────────┐
-│  左侧边栏        │  文件卡片网格                         │
-│  🔍 搜索框       │  ┌─────────┐ ┌─────────┐ ┌─────────┐ │
-│  仓库列表         │  │ undefe- │ │ KCLT    │ │ KCQT    │ │
-│  (按质量分排列)   │  │ ated    │ │ .csv    │ │ .csv    │ │
-│                  │  │ .csv    │ │ 52 KB   │ │ 45 KB   │ │
-│                  │  └─────────┘ └─────────┘ └─────────┘ │
-│                  │              │                         │
-│                  │    点击文件 → 右侧滑出预览面板          │
-│                  │    ┌─────────────────────────┐        │
-│                  │    │ name  │ url │ date │... │        │
-│                  │    │ Juro  │ ... │ 1941 │... │        │
-│                  │    │ ...   │ ... │ ...  │... │        │
-│                  │    └─────────────────────────┘        │
-└──────────────────┴──────────────────────────────────────┘
-```
-
-- **实时搜索** — 输入关键词即时过滤仓库
-- **CSV 表格预览** — 点击 CSV 文件弹出交互式数据表格（前 500 行）
-- **JSON/文本预览** — 语法高亮的 JSON，Markdown/Python/XML 源码
-- **局域网共享** — 自动探测本机 IP，同事浏览器直接访问
-- **公网隧道** — `ssh -R 80:localhost:5000 serveo.net` 一键生成公网链接
-
-### 交互终端 `DS4>`
-
-```
-DS4> /search 电商价格 csv
-DS4> /stats
-DS4> /best 10
-DS4> /recent
-DS4> /rebuild
-DS4> /quit
-```
+| 仓库 | ⭐ Stars | 得分 | 数据 |
+|------|---------|------|------|
+| [fivethirtyeight/data](https://github.com/fivethirtyeight/data) | 16,900 | 16.5 | **189 个 CSV**：世界杯预测、美国天气、拳击记录、选民登记…… |
+| [public-apis/public-apis](https://github.com/public-apis/public-apis) | 330,000 | 13.0 | 数百个分类免费 API 目录 |
+| [awesomedata/awesome-public-datasets](https://github.com/awesomedata/awesome-public-datasets) | 63,000 | 13.0 | 按主题分类的高质量开放数据集索引 |
+| [jivoi/awesome-osint](https://github.com/jivoi/awesome-osint) | 21,000 | 10.0 | 开源情报工具与资源大全 |
+| [datasets/awesome-data](https://github.com/datasets/awesome-data) | 6,200 | 8.0 | 经济/气候/人口数据源 |
 
 ---
 
-## 种子数据（预置 5 个高质量仓库）
+## Web 浏览器功能
 
-| 仓库 | Stars | 得分 | 数据文件 | 内容 |
-|------|-------|------|----------|------|
-| [fivethirtyeight/data](https://github.com/fivethirtyeight/data) | 16,900 | 16.5 | 189 CSV | 世界杯预测、美国天气历史、拳击手记录、人口统计…… |
-| [public-apis/public-apis](https://github.com/public-apis/public-apis) | 330,000 | 13.0 | API 目录 | 数百个分类免费 API 索引 |
-| [awesomedata/awesome-public-datasets](https://github.com/awesomedata/awesome-public-datasets) | 63,000 | 13.0 | 数据集目录 | 按主题分类的高质量开放数据集清单 |
-| [jivoi/awesome-osint](https://github.com/jivoi/awesome-osint) | 21,000 | 10.0 | OSINT 工具集 | 开源情报收集工具大全 |
-| [datasets/awesome-data](https://github.com/datasets/awesome-data) | 6,200 | 8.0 | 数据集目录 | 经济、气候、人口等数据源链接 |
+```
+┌──────────────────┬──────────────────────────────────────────┐
+│  左侧边栏         │  主内容区                                 │
+│  🔍 实时搜索      │  文件卡片网格 (按类型彩色标签)              │
+│  仓库列表         │  ┌─────────┐ ┌─────────┐ ┌─────────┐    │
+│  (带质量分+星标)   │  │ undefe- │ │ KCLT    │ │ KCQT    │    │
+│                  │  │ ated    │ │ .csv    │ │ .csv    │    │
+│  ┌────────────┐  │  │ .csv    │ │ 52 KB   │ │ 45 KB   │    │
+│  │ fivethirty-│  │  └─────────┘ └─────────┘ └─────────┘    │
+│  │ eight/data │  │                                          │
+│  │ 16.5/50    │  │        点击任意文件 → 右侧滑出面板         │
+│  │ ★ 16,900   │  │   ┌─────────────────────────────────┐   │
+│  │ MIT        │  │   │ [Stats] [Chart] [Export CSV] [✕]│   │
+│  └────────────┘  │   │─────────────────────────────────│   │
+│  ┌────────────┐  │   │  name ▲   │ url    │ date     │   │
+│  │ public-apis│  │   │  Juro...  │ boxrec │ 1941-01  │   │
+│  │ 13.0/50    │  │   │  Jake...  │ boxrec │ 1943-06  │   │
+│  │ ★ 330,000  │  │   │  ...      │ ...    │ ...      │   │
+│  └────────────┘  │   └─────────────────────────────────┘   │
+└──────────────────┴──────────────────────────────────────────┘
+```
+
+- **CSV 交互表格** — 点击列头排序（升▲/降▼）、按列值过滤、统计面板（均值/最大最小/空值率）
+- **Chart.js 可视化** — 选 X/Y 轴 → 柱状图/折线图，暗色主题适配
+- **导出** — 支持 CSV 和 JSON 格式，含当前过滤条件
+- **许可证一览** — `/api/licenses` 展示各数据集许可证
 
 ---
 
-## 架构设计
+## 公网分享：零配置
 
-### 项目结构
+```bash
+# 终端 1：启动 Web 服务（自动检测局域网 IP）
+python DataWarehouse_Web.py
+# → http://127.0.0.1:5000
+# → http://10.195.169.238:5000  (LAN 自动检测)
 
-```
-DataWarehouse-Explorer/
-├── DeepSeek_DataV4.py          # CLI 流水线（4 阶段）
-├── DataWarehouse_Web.py         # Flask 网页浏览器（单文件）
-├── config.json                  # 搜索配置
-├── README.md                    # 项目文档
-├── LICENSE                      # MIT 协议
-└── .gitignore
-```
-
-### 移动硬盘目录结构
-
-```
-My Passport/                     # 移动硬盘根目录
-├── config.json                  # 运行配置
-└── DataWarehouse/
-    ├── metadata/                # 每个仓库的 JSON 索引
-    ├── code/                    # 克隆的仓库源码
-    ├── data/
-    │   ├── structured/          # csv/ json/ xml/ db/ 分类存储
-    │   └── unstructured/raw/
-    ├── logs/                    # 运行日志
-    └── tmp/                     # 临时下载目录（自动清理）
+# 终端 2：一键公网隧道（免费、无需注册）
+ssh -R 80:localhost:5000 serveo.net
+# → https://xxxx.serveousercontent.com  (公网链接)
 ```
 
-### 技术栈
+加上 `--public` 参数可关闭认证，开启 Basic Auth 保护需配置环境变量 `DW_USER` / `DW_PASS_HASH`。
 
-| 组件 | 技术 |
+---
+
+## 数据护照：知道你的数据从哪来
+
+每个入库数据集自动生成身份档案：
+
+```json
+{
+  "uuid": "f47ac10b-...",
+  "source_repo": "fivethirtyeight/data",
+  "data_domain": "sports",
+  "update_frequency": "static",
+  "license": "CC BY 4.0",
+  "citation": "FiveThirtyEight, 2024",
+  "compatible_tools": ["pandas", "jupyter", "excel"],
+  "version_commit_hash": "a3f2b1c"
+}
+```
+
+对于学术引用、商用合规审查、数据血缘追溯，这比任何 README 都管用。
+
+---
+
+## 设计原则
+
+| 原则 | 实现 |
 |------|------|
-| 异步爬虫 | `aiohttp` · `asyncio` |
-| HTML 解析 | `beautifulsoup4` · `lxml` |
-| Python 语法校验 | `ast.parse` |
-| 文件类型检测 | `pathlib` · `mimetypes` |
-| Web 服务 | `Flask` |
-| 前端 | Vanilla JS · CSS Grid · Fetch API |
-| 网络隧道 | `serveo.net` (SSH 端口转发) |
-
-### 设计原则
-
-- **幂等性** — 脚本可反复运行，重复抓取时自动跳过或增量更新
-- **健壮性** — 网络超时、文件损坏只记日志，绝不中断主循环
-- **PEP8** — 严格遵循 Python 代码规范，完整 Type Hints
-- **自愈引导** — 缺少依赖自动 `pip install`，无需手动配置
+| **幂等性** | 重复运行自动跳过已入库仓库，仅增量更新 |
+| **健壮性** | 网络超时、文件损坏只记日志，绝不中断主循环 |
+| **PEP8 合规** | 完整 Type Hints + Google Style Docstrings + ruff 检测 |
+| **自愈安装** | 缺少依赖自动 `pip install`，无需手动配置 |
+| **内容寻址** | 同一文件只存一份，SHA-256 天然去重 |
+| **向后兼容** | v1.0 JSON 元数据可一步迁移到 v2.0 SQLite |
 
 ---
 
 ## 配置
-
-编辑 `config.json` 自定义搜索行为：
 
 ```json
 {
   "search_keywords": ["api", "crawler", "scraper", "dataset", "data-pipeline"],
   "min_stars": 5,
   "max_repos_per_keyword": 20,
-  "blacklist_repos": [],
-  "preferred_mirrors": ["kgithub"]
+  "storage_mode": "content_addressed",
+  "web_auth_user": null,
+  "web_auth_pass_hash": null
 }
 ```
 
+完整配置项见 [docs/CONFIGURATION.md](docs/CONFIGURATION.md)。
+
 ---
 
-## 公网部署
-
-### 局域网分享
-
-启动 Web 服务后，终端会显示本机 IP 地址，同一网络下的设备可直接访问：
-
-```
-http://10.195.169.238:5000
-```
-
-### 公网隧道（无需注册）
+## 测试
 
 ```bash
-# 终端 1：启动网页服务
-python DataWarehouse_Web.py
-
-# 终端 2：创建公网隧道
-ssh -R 80:localhost:5000 serveo.net
-# 输出: https://xxxx.serveousercontent.com
+pytest tests/ -v
+# 18 passed — 覆盖校验器、Web API、PII 扫描、许可证检测
 ```
-
-生成的链接可发给任何人访问。serveo.net 免费、无需注册。
-
-### 长期部署
-
-如需长期稳定运行，建议使用 Cloudflare Tunnel 或部署到云服务器（将 `E:\DataWarehouse` 数据目录同步上去即可）。
 
 ---
 
-## 依赖
+## 技术栈
 
-| 包 | 用途 |
-|---|------|
-| `aiohttp` | 异步 HTTP 请求 |
-| `beautifulsoup4` + `lxml` | HTML 页面解析 |
-| `colorama` | 终端彩色输出 |
-| `flask` | Web 服务 |
-
-首次运行自动安装。
+`aiohttp` · `asyncio` · `beautifulsoup4` · `lxml` · `Flask` · `Chart.js` · `SQLite` · `serveo.net`
 
 ---
 
@@ -223,14 +265,10 @@ MIT — 详见 [LICENSE](LICENSE)
 
 ---
 
-## 作者
-
-**symmetryseeker** — [GitHub](https://github.com/symmetryseeker)
-
----
-
 <div align="center">
 
-*用 Python、aiohttp、Flask 和「再也不想手动找数据集了」的怨念构建。*
+**⭐ 如果这个项目帮你省了一下午找数据集的时间，点个 Star 支持一下**
+
+[GitHub](https://github.com/symmetryseeker) · [在线演示](https://8a2f919343bf8ef0-36-110-14-5.serveousercontent.com) · [API 文档](docs/API.md) · [配置指南](docs/CONFIGURATION.md)
 
 </div>
