@@ -27,7 +27,7 @@ Think of it as your **personal offline data warehouse** — point it at your por
 
 ```bash
 # 1. Clone this repo
-git clone git@github.com:symmetryseeker/DataWarehouse-Explorer.git
+git clone https://github.com/symmetryseeker/DataWarehouse-Explorer.git
 cd DataWarehouse-Explorer
 
 # 2. Run the pipeline (downloads & indexes repos)
