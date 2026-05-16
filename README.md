@@ -100,6 +100,20 @@ datawarehouse/
 ├── ingestor.py        # 异步搜索 + 5 路下载策略
 ├── validator.py       # 深度校验 + PII 扫描 + 许可证检测
 ├── storage.py         # SHA-256 内容寻址存储 + raw/processed 分离
+├── metadb.py          # SQLite 元数据库 (3 tables, 6 indexes)
+├── pipeline.py        # 流水线编排器
+├── license_report.py  # LICENSES.md 自动生成
+├── ai/                # 🆕 v3.0 AI 增强层
+│   ├── llm_client.py  #   多提供商 LLM (DeepSeek/OpenAI/GLM/Ollama)
+│   ├── schema_inferrer.py # 自动字段描述生成
+│   └── text_to_sql.py #   RAG + 自然语言 → SQL 引擎
+├── storage/           # 🆕 v3.0 高级存储层
+│   ├── duckdb_engine.py   # DuckDB OLAP 分析引擎
+│   └── minio_client.py    # MinIO S3 对象存储客户端
+├── ingestion/         # 🆕 v3.0 高级采集层
+│   ├── proxy_pool.py      # 代理池 (打分/健康检查/轮换)
+│   ├── playwright_fetcher.py # Headless Chromium JS 渲染
+│   └── dlt_loader.py      # dlt 结构化数据增量加载
 ├── query.py           # 内存倒排索引 + 自然语言搜索
 ├── metadb.py          # SQLite 元数据库 (3 tables, 6 indexes)
 ├── pipeline.py        # 流水线编排器
@@ -173,6 +187,56 @@ python DataWarehouse_Web.py
 - **Chart.js 可视化** — 选 X/Y 轴 → 柱状图/折线图，暗色主题适配
 - **导出** — 支持 CSV 和 JSON 格式，含当前过滤条件
 - **许可证一览** — `/api/licenses` 展示各数据集许可证
+
+---
+
+## 🆕 v3.0: AI 自然语言查询
+
+点击右下角蓝色 **AI** 按钮，用自然语言提问：
+
+```
+"Show top 5 undefeated boxers by wins"
+"Which city had the highest average temperature?"
+```
+
+系统自动：**理解问题 → 生成 SQL → DuckDB 执行 → 返回结果 + 图表**
+
+### 配置 LLM API
+
+编辑 `config/llm_config.yaml`（已 gitignore，不会泄露密钥）：
+
+```yaml
+active_provider: deepseek   # deepseek | openai | glm | ollama
+
+providers:
+  deepseek:
+    api_key: "sk-your-key-here"      # https://platform.deepseek.com/api_keys
+    base_url: "https://api.deepseek.com/v1"
+    model: "deepseek-chat"
+
+  glm:
+    api_key: "your-key-here"         # https://open.bigmodel.cn/
+    base_url: "https://open.bigmodel.cn/api/paas/v4"
+    model: "glm-4"
+
+  ollama:
+    base_url: "http://localhost:11434/v1"  # 本地部署，免费
+    model: "qwen2.5:7b"
+```
+
+| 提供商 | 费用 | 适用场景 |
+|--------|------|---------|
+| **DeepSeek** | ¥1/百万 token | 性价比最高 |
+| **GLM (智谱)** | ¥1/百万 token | 国产替代，合规 |
+| **Ollama** | 免费 | 本地运行，数据不出设备 |
+| **OpenAI** | $5/百万 token | 最强推理能力 |
+
+### AI API 端点
+
+| 端点 | 功能 |
+|------|------|
+| `POST /api/ai/ask` | 自然语言 → SQL → 查询结果 |
+| `POST /api/ai/schema` | LLM 自动推断字段含义 |
 
 ---
 
