@@ -1,0 +1,54 @@
+version: "3.8"
+
+services:
+  web:
+    build: .
+    container_name: datawarehouse-web
+    ports:
+      - "5000:5000"
+    volumes:
+      - warehouse_data:/data
+      - ./config/config.json:/app/config/config.json:ro
+    environment:
+      - DW_WAREHOUSE_ROOT=/data
+      - DW_DATABASE_URL=sqlite:///data/warehouse.db
+      - DW_PUBLIC_MODE=0
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    container_name: datawarehouse-redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
+  celery-worker:
+    build: .
+    container_name: datawarehouse-worker
+    command: celery -A datawarehouse.tasks worker --loglevel=info --concurrency=2
+    volumes:
+      - warehouse_data:/data
+    environment:
+      - DW_WAREHOUSE_ROOT=/data
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  warehouse_data:
+    driver: local
+  redis_data:
+    driver: local
