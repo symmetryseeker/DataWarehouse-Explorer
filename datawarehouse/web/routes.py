@@ -299,3 +299,95 @@ def api_licenses():
         "license": r.get("license", "Unknown"),
         "repo_url": r.get("repo_url"),
     } for r in repos])
+
+
+# ---------------------------------------------------------------------------
+# AI-powered endpoints (v3.0)
+# ---------------------------------------------------------------------------
+
+_ai_text_to_sql: Any = None  # lazy-loaded TextToSQLEngine
+
+
+def _get_ai_engine():
+    """Lazy-init the Text-to-SQL engine (requires llm_config.yaml)."""
+    global _ai_text_to_sql
+    if _ai_text_to_sql is not None:
+        return _ai_text_to_sql
+    try:
+        from datawarehouse.ai.text_to_sql import TextToSQLEngine
+        from datawarehouse.ai.llm_client import load_llm_config
+
+        config = load_llm_config()
+        db_path = str(_code_dir.parent / "analytics.db")
+        engine = TextToSQLEngine(config, duckdb_path=db_path)
+
+        # Auto-register CSV files from the warehouse
+        csv_dir = _code_dir.parent / "data" / "structured" / "csv"
+        if csv_dir.is_dir():
+            engine.register_csv_directory(csv_dir)
+
+        _ai_text_to_sql = engine
+        return engine
+    except Exception as exc:
+        raise RuntimeError(f"AI engine not available: {exc}")
+
+
+@api.route("/api/ai/ask", methods=["POST"])
+@requires_auth
+def api_ai_ask():
+    """Natural language query endpoint.
+
+    POST JSON::
+
+        {"question": "去年销售额最高的三个品类是什么？"}
+
+    Returns::
+
+        {"question": "...", "sql": "SELECT ...", "columns": [...], "rows": [[...]], ...}
+    """
+    data = request.get_json(silent=True)
+    if not data or "question" not in data:
+        abort(400, "Missing 'question' field")
+
+    try:
+        engine = _get_ai_engine()
+        result = engine.query(data["question"])
+        return jsonify(result)
+    except RuntimeError as exc:
+        return jsonify({"error": str(exc), "hint": "Configure llm_config.yaml"}), 503
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+
+@api.route("/api/ai/schema", methods=["POST"])
+@requires_auth
+def api_ai_schema():
+    """Auto-infer field descriptions for a CSV file via LLM.
+
+    POST JSON::
+
+        {"slug": "fivethirtyeight_data", "filepath": "path/to/file.csv"}
+
+    Returns per-column descriptions.
+    """
+    data = request.get_json(silent=True)
+    if not data or "filepath" not in data:
+        abort(400)
+
+    slug = data.get("slug", "")
+    filepath = data.get("filepath", "")
+    full_path = _code_dir / slug / filepath
+
+    if not full_path.is_file():
+        abort(404)
+
+    try:
+        from datawarehouse.ai.schema_inferrer import SchemaInferrer
+        from datawarehouse.ai.llm_client import load_llm_config
+
+        config = load_llm_config()
+        inferrer = SchemaInferrer(config)
+        result = inferrer.infer(full_path)
+        return jsonify({"file": filepath, "schema": result})
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500

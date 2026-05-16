@@ -258,5 +258,55 @@ function escAttr(s) {
   return s.replace(/\\/g,"\\\\").replace(/'/g,"\\'").replace(/"/g,"&quot;");
 }
 
+// ---- AI Chat ----
+function toggleAiChat() {
+  document.getElementById("ai-chat-panel").classList.toggle("open");
+}
+async function askAI() {
+  const input = document.getElementById("ai-question");
+  const question = input.value.trim();
+  if (!question) return;
+
+  const msgs = document.getElementById("ai-chat-messages");
+  msgs.innerHTML += `<div class="ai-msg user">${escHtml(question)}</div>`;
+  input.value = "";
+
+  // Add typing indicator
+  const typingId = "typing-" + Date.now();
+  msgs.innerHTML += `<div class="ai-msg system" id="${typingId}">Thinking...</div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+
+  try {
+    const resp = await fetch("/api/ai/ask", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({question}),
+    });
+    const data = await resp.json();
+
+    // Remove typing indicator
+    document.getElementById(typingId)?.remove();
+
+    if (data.error) {
+      msgs.innerHTML += `<div class="ai-msg system">Error: ${escHtml(data.error)}<br><small>Hint: Configure config/llm_config.yaml with your LLM API key</small></div>`;
+    } else {
+      let html = `<div class="ai-msg assistant">`;
+      if (data.sql) html += `<span class="sql-block">${escHtml(data.sql)}</span>`;
+      if (data.columns && data.rows) {
+        html += `<div style="margin-top:6px;font-size:.7rem;color:var(--muted);">${data.row_count} rows</div>`;
+        if (data.chart_type && data.chart_type !== "table") {
+          html += `<div style="margin-top:4px;font-size:.7rem;color:var(--accent);">Chart: ${data.chart_type}</div>`;
+        }
+      }
+      html += `</div>`;
+      msgs.innerHTML += html;
+    }
+  } catch (e) {
+    document.getElementById(typingId)?.remove();
+    msgs.innerHTML += `<div class="ai-msg system">Network error. Is the server running?</div>`;
+  }
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
 document.addEventListener("keydown", e => { if (e.key === "Escape") closePreview(); });
 init();

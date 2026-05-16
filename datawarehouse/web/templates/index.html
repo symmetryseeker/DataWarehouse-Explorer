@@ -51,6 +51,22 @@
   <div class="preview-body" id="preview-body"></div>
 </div>
 
+<!-- AI Chat Panel -->
+<div class="ai-chat-toggle" id="ai-chat-toggle" onclick="toggleAiChat()">AI</div>
+<div class="ai-chat-panel" id="ai-chat-panel">
+  <div class="ai-chat-header">
+    <span>AI Query (Text-to-SQL)</span>
+    <button class="preview-close" onclick="toggleAiChat()">&times;</button>
+  </div>
+  <div class="ai-chat-messages" id="ai-chat-messages">
+    <div class="ai-msg system">Ask questions about your data in natural language.<br>Example: "Show top 5 boxers by wins"</div>
+  </div>
+  <div class="ai-chat-input">
+    <input type="text" id="ai-question" placeholder="e.g. 去年销售额最高的品类？" onkeydown="if(event.key==='Enter')askAI()">
+    <button class="btn-sm" onclick="askAI()">Ask</button>
+  </div>
+</div>
+
 <script src="/static/js/app.js"></script>
 <script src="/static/js/charts.js"></script>
 </body>

@@ -36,6 +36,10 @@ Desktop.ini
 .env
 .env.local
 
+# LLM API keys (never commit!)
+llm_config.yaml
+config/llm_config.yaml
+
 # Temporary
 tmp/
 temp/
